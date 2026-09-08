@@ -12,8 +12,8 @@ android {
         applicationId = "com.signallost.tv"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.2.3"
+        versionCode = 5
+        versionName = "0.2.4"
     }
 
     compileOptions {
@@ -41,5 +41,6 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.core:core-ktx:1.15.0")
+    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:13.0.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
