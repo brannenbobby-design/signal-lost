@@ -3,6 +3,7 @@ package com.signallost.tv
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -22,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,7 +56,7 @@ private val channels = listOf(
     Channel(4, "HIP-HOP / R&B", "HIP-HOP / R&B", listOf("_JZom_gVfuw")),
     Channel(5, "90s POP", "POP", listOf("C-u5WLJ9Yk4")),
     Channel(6, "90s METAL", "METAL", listOf("CD-E-LDc384")),
-    Channel(7, "ONE-HIT WONDERS", "ONE-HIT WONDERS", listOf("DL7-CKirWZE")),
+    Channel(7, "ONE-HIT WONDERS", "ONE-HIT", listOf("DL7-CKirWZE")),
     Channel(8, "90s PARTY MIX", "PARTY MIX", listOf("ZbZSe6N_BXs"))
 )
 
@@ -72,25 +72,24 @@ private val DeskBrown = Color(0xFF3C2117)
 fun SignalLostApp() {
     var channelIndex by remember { mutableIntStateOf(0) }
     var videoIndex by remember { mutableIntStateOf(0) }
-    var webView by remember { mutableStateOf<WebView?>(null) }
+    var playRequest by remember { mutableIntStateOf(0) }
     val channel = channels[channelIndex]
     val videoId = channel.videos[videoIndex % channel.videos.size]
 
     fun selectChannel(index: Int) {
         channelIndex = index
         videoIndex = 0
+        playRequest = 0
     }
 
     fun nextVideo() {
         videoIndex = (videoIndex + 1) % channel.videos.size
+        playRequest = 0
     }
 
     fun previousVideo() {
         videoIndex = (videoIndex - 1 + channel.videos.size) % channel.videos.size
-    }
-
-    fun play() {
-        webView?.evaluateJavascript("if (window.player && player.playVideo) { player.playVideo(); }", null)
+        playRequest = 0
     }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
@@ -115,13 +114,12 @@ fun SignalLostApp() {
             BedroomScene(
                 selectedChannel = channelIndex,
                 videoId = videoId,
-                onSelectChannel = { selectChannel(it) },
-                onEnded = { nextVideo() },
-                onWebViewReady = { webView = it }
+                playRequest = playRequest,
+                onSelectChannel = { selectChannel(it) }
             )
             TransportControls(
                 onPrevious = { previousVideo() },
-                onPlay = { play() },
+                onPlay = { playRequest++ },
                 onNext = { nextVideo() }
             )
             Spacer(Modifier.height(12.dp))
@@ -132,6 +130,16 @@ fun SignalLostApp() {
                 fontFamily = FontFamily.Monospace,
                 fontSize = 11.sp,
                 letterSpacing = 2.sp,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                "If PLAY does not start immediately, tap the YouTube play button inside the TV.",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 28.dp, vertical = 8.dp),
+                color = Color.Gray,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 8.sp,
                 textAlign = TextAlign.Center
             )
         }
@@ -176,9 +184,8 @@ private fun SignalHeader() {
 private fun BedroomScene(
     selectedChannel: Int,
     videoId: String,
-    onSelectChannel: (Int) -> Unit,
-    onEnded: () -> Unit,
-    onWebViewReady: (WebView) -> Unit
+    playRequest: Int,
+    onSelectChannel: (Int) -> Unit
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -222,9 +229,8 @@ private fun BedroomScene(
                 CrtTelevision(
                     modifier = Modifier.width(tvWidth),
                     videoId = videoId,
-                    channel = channels[selectedChannel],
-                    onEnded = onEnded,
-                    onWebViewReady = onWebViewReady
+                    playRequest = playRequest,
+                    channel = channels[selectedChannel]
                 )
             }
 
@@ -247,7 +253,7 @@ private fun VhsTape(channel: Channel, selected: Boolean, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(42.dp)
+            .height(40.dp)
             .background(glow, RoundedCornerShape(5.dp))
             .border(if (selected) 2.dp else 1.dp, outline, RoundedCornerShape(5.dp))
             .clickable { onClick() }
@@ -272,9 +278,9 @@ private fun VhsTape(channel: Channel, selected: Boolean, onClick: () -> Unit) {
                 channel.shortName,
                 color = Color(0xFF171717),
                 fontWeight = FontWeight.Bold,
-                fontSize = 9.sp,
+                fontSize = 8.sp,
                 textAlign = TextAlign.Center,
-                maxLines = 2
+                maxLines = 1
             )
         }
         Text(
@@ -291,9 +297,8 @@ private fun VhsTape(channel: Channel, selected: Boolean, onClick: () -> Unit) {
 private fun CrtTelevision(
     modifier: Modifier,
     videoId: String,
-    channel: Channel,
-    onEnded: () -> Unit,
-    onWebViewReady: (WebView) -> Unit
+    playRequest: Int,
+    channel: Channel
 ) {
     Column(
         modifier = modifier
@@ -310,19 +315,20 @@ private fun CrtTelevision(
                 .background(Color.Black)
                 .border(2.dp, Color(0xFF303030), RoundedCornerShape(18.dp))
         ) {
-            YouTubeEmbed(
-                videoId = videoId,
-                onEnded = onEnded,
-                onWebViewReady = onWebViewReady,
-                modifier = Modifier.fillMaxSize()
-            )
+            key(videoId, playRequest) {
+                YouTubeEmbed(
+                    videoId = videoId,
+                    autoplay = playRequest > 0,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
 
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .fillMaxWidth()
-                    .background(Color.Black.copy(alpha = 0.70f))
-                    .padding(horizontal = 7.dp, vertical = 4.dp)
+                    .background(Color.Black.copy(alpha = 0.58f))
+                    .padding(horizontal = 7.dp, vertical = 3.dp)
             ) {
                 Text(
                     "CH ${channel.number.toString().padStart(2, '0')} • ${channel.shortName}",
@@ -330,12 +336,6 @@ private fun CrtTelevision(
                     fontFamily = FontFamily.Monospace,
                     fontSize = 8.sp,
                     fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "SIGNAL LOST VIDEO NETWORK",
-                    color = Color.White,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 6.sp
                 )
             }
         }
@@ -406,74 +406,55 @@ private fun MediaButton(icon: String, label: String, primary: Boolean, onClick: 
 @Composable
 fun YouTubeEmbed(
     videoId: String,
-    onEnded: () -> Unit,
-    onWebViewReady: (WebView) -> Unit,
+    autoplay: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-
     AndroidView(
         modifier = modifier,
-        factory = {
+        factory = { context ->
             WebView(context).apply {
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
-                settings.mediaPlaybackRequiresUserGesture = true
+                settings.mediaPlaybackRequiresUserGesture = !autoplay
                 settings.allowContentAccess = true
-                settings.allowFileAccess = true
+                settings.allowFileAccess = false
+                settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                settings.loadsImagesAutomatically = true
                 webChromeClient = WebChromeClient()
                 webViewClient = WebViewClient()
                 setBackgroundColor(android.graphics.Color.BLACK)
-                addJavascriptInterface(object {
-                    @android.webkit.JavascriptInterface
-                    fun videoEnded() = onEnded()
-                }, "Android")
-                onWebViewReady(this)
-            }
-        },
-        update = { view ->
-            if (view.tag != videoId) {
-                view.tag = videoId
+                setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
+
+                val auto = if (autoplay) 1 else 0
                 val html = """
                     <!doctype html>
                     <html>
                     <head>
                       <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
                       <style>
-                        html,body,#player { margin:0; width:100%; height:100%; background:#000; overflow:hidden; }
-                        iframe { width:100% !important; height:100% !important; }
+                        html,body { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; }
+                        iframe { display:block; border:0; width:100%; height:100%; }
                       </style>
                     </head>
                     <body>
-                      <div id="player"></div>
-                      <script src="https://www.youtube.com/iframe_api"></script>
-                      <script>
-                        var player;
-                        function onYouTubeIframeAPIReady() {
-                          player = new YT.Player('player', {
-                            videoId: '$videoId',
-                            playerVars: {
-                              autoplay: 0,
-                              controls: 1,
-                              rel: 0,
-                              playsinline: 1,
-                              enablejsapi: 1,
-                              origin: 'https://www.youtube.com'
-                            },
-                            events: {
-                              onStateChange: function(event) {
-                                if (event.data === YT.PlayerState.ENDED) {
-                                  Android.videoEnded();
-                                }
-                              }
-                            }
-                          });
-                        }
-                      </script>
+                      <iframe
+                        src="https://www.youtube.com/embed/$videoId?autoplay=$auto&playsinline=1&controls=1&rel=0&fs=0"
+                        title="Signal Lost player"
+                        allow="autoplay; encrypted-media; picture-in-picture"
+                      ></iframe>
                     </body>
                     </html>
                 """.trimIndent()
-                view.loadDataWithBaseURL("https://www.youtube.com/", html, "text/html", "UTF-8", null)
+
+                // The non-YouTube base URL gives the embed a real Referer identity.
+                // YouTube now requires embedded API clients to identify themselves.
+                loadDataWithBaseURL(
+                    "https://com.signallost.tv/",
+                    html,
+                    "text/html",
+                    "UTF-8",
+                    null
+                )
             }
         }
     )
