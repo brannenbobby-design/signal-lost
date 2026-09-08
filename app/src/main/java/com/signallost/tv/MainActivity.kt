@@ -2,6 +2,7 @@ package com.signallost.tv
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -16,11 +17,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
@@ -34,11 +35,7 @@ import com.signallost.tv.ui.theme.SignalLostTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            SignalLostTheme {
-                SignalLostApp()
-            }
-        }
+        setContent { SignalLostTheme { SignalLostApp() } }
     }
 }
 
@@ -100,12 +97,7 @@ fun SignalLostApp() {
                 .verticalScroll(rememberScrollState())
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            Color(0xFF080A18),
-                            Color(0xFF161026),
-                            Color(0xFF2B1621),
-                            Color(0xFF130C0B)
-                        )
+                        listOf(Color(0xFF080A18), Color(0xFF161026), Color(0xFF2B1621), Color(0xFF130C0B))
                     )
                 )
                 .padding(bottom = 16.dp)
@@ -132,42 +124,16 @@ fun SignalLostApp() {
                 letterSpacing = 2.sp,
                 textAlign = TextAlign.Center
             )
-            Text(
-                "If PLAY does not start immediately, tap the YouTube play button inside the TV.",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 28.dp, vertical = 8.dp),
-                color = Color.Gray,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 8.sp,
-                textAlign = TextAlign.Center
-            )
         }
     }
 }
 
 @Composable
 private fun SignalHeader() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 12.dp)
-    ) {
+    Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp)) {
         Column {
-            Text(
-                "SIGNAL LOST",
-                color = NeonBlue,
-                fontWeight = FontWeight.Black,
-                fontSize = 30.sp,
-                letterSpacing = 1.sp
-            )
-            Box(
-                modifier = Modifier
-                    .padding(top = 1.dp)
-                    .width(170.dp)
-                    .height(3.dp)
-                    .background(NeonPink)
-            )
+            Text("SIGNAL LOST", color = NeonBlue, fontWeight = FontWeight.Black, fontSize = 30.sp, letterSpacing = 1.sp)
+            Box(modifier = Modifier.padding(top = 1.dp).width(170.dp).height(3.dp).background(NeonPink))
             Text(
                 "MUSIC NEVER DISAPPEARS",
                 modifier = Modifier.padding(top = 5.dp),
@@ -191,15 +157,9 @@ private fun BedroomScene(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 10.dp)
-            .clip(RoundedCornerShape(18.dp))
             .background(
-                Brush.linearGradient(
-                    listOf(
-                        Color(0xFF1A1130),
-                        Color(0xFF391723),
-                        Color(0xFF11172B)
-                    )
-                )
+                Brush.linearGradient(listOf(Color(0xFF1A1130), Color(0xFF391723), Color(0xFF11172B))),
+                RoundedCornerShape(18.dp)
             )
             .border(1.dp, Color(0xFF4B345A), RoundedCornerShape(18.dp))
             .padding(10.dp)
@@ -213,19 +173,11 @@ private fun BedroomScene(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
-                Column(
-                    modifier = Modifier.width(tapeWidth),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
+                Column(modifier = Modifier.width(tapeWidth), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     channels.forEachIndexed { index, item ->
-                        VhsTape(
-                            channel = item,
-                            selected = index == selectedChannel,
-                            onClick = { onSelectChannel(index) }
-                        )
+                        VhsTape(item, index == selectedChannel) { onSelectChannel(index) }
                     }
                 }
-
                 CrtTelevision(
                     modifier = Modifier.width(tvWidth),
                     videoId = videoId,
@@ -233,7 +185,6 @@ private fun BedroomScene(
                     channel = channels[selectedChannel]
                 )
             }
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -249,7 +200,6 @@ private fun BedroomScene(
 private fun VhsTape(channel: Channel, selected: Boolean, onClick: () -> Unit) {
     val outline = if (selected) NeonBlue else Color(0xFF383838)
     val glow = if (selected) Color(0xFF102B45) else TapeBlack
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -261,16 +211,11 @@ private fun VhsTape(channel: Channel, selected: Boolean, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier
-                .width(7.dp)
-                .fillMaxHeight()
+            modifier = Modifier.width(7.dp).fillMaxHeight()
                 .background(if (selected) NeonBlue else Color(0xFF4B2424), RoundedCornerShape(2.dp))
         )
         Box(
-            modifier = Modifier
-                .padding(start = 4.dp)
-                .weight(1f)
-                .fillMaxHeight()
+            modifier = Modifier.padding(start = 4.dp).weight(1f).fillMaxHeight()
                 .background(LabelCream, RoundedCornerShape(2.dp)),
             contentAlignment = Alignment.Center
         ) {
@@ -283,13 +228,7 @@ private fun VhsTape(channel: Channel, selected: Boolean, onClick: () -> Unit) {
                 maxLines = 1
             )
         }
-        Text(
-            "VHS",
-            modifier = Modifier.padding(start = 3.dp),
-            color = Color.LightGray,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 7.sp
-        )
+        Text("VHS", modifier = Modifier.padding(start = 3.dp), color = Color.LightGray, fontFamily = FontFamily.Monospace, fontSize = 7.sp)
     }
 }
 
@@ -311,23 +250,17 @@ private fun CrtTelevision(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(4f / 3f)
-                .clip(RoundedCornerShape(18.dp))
                 .background(Color.Black)
                 .border(2.dp, Color(0xFF303030), RoundedCornerShape(18.dp))
         ) {
             key(videoId, playRequest) {
-                YouTubeEmbed(
-                    videoId = videoId,
-                    autoplay = playRequest > 0,
-                    modifier = Modifier.fillMaxSize()
-                )
+                YouTubeEmbed(videoId, playRequest > 0, Modifier.fillMaxSize())
             }
-
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .fillMaxWidth()
-                    .background(Color.Black.copy(alpha = 0.58f))
+                    .background(Color.Black.copy(alpha = 0.45f))
                     .padding(horizontal = 7.dp, vertical = 3.dp)
             ) {
                 Text(
@@ -339,7 +272,6 @@ private fun CrtTelevision(
                 )
             }
         }
-
         Spacer(Modifier.height(7.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -350,12 +282,7 @@ private fun CrtTelevision(
             Text("SIGNAL LOST", color = Color.Gray, fontFamily = FontFamily.Monospace, fontSize = 7.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                 repeat(4) {
-                    Box(
-                        Modifier
-                            .width(13.dp)
-                            .height(5.dp)
-                            .background(Color(0xFF292929), RoundedCornerShape(2.dp))
-                    )
+                    Box(Modifier.width(13.dp).height(5.dp).background(Color(0xFF292929), RoundedCornerShape(2.dp)))
                 }
             }
         }
@@ -364,23 +291,16 @@ private fun CrtTelevision(
 
 @Composable
 private fun TransportControls(onPrevious: () -> Unit, onPlay: () -> Unit, onNext: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 14.dp, start = 18.dp, end = 18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 14.dp, start = 18.dp, end = 18.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            MediaButton("|◀", "PREV", false, onPrevious)
-            Spacer(Modifier.width(26.dp))
-            MediaButton("▶", "PLAY", true, onPlay)
-            Spacer(Modifier.width(26.dp))
-            MediaButton("▶|", "NEXT", false, onNext)
-        }
+        MediaButton("|◀", "PREV", false, onPrevious)
+        Spacer(Modifier.width(26.dp))
+        MediaButton("▶", "PLAY", true, onPlay)
+        Spacer(Modifier.width(26.dp))
+        MediaButton("▶|", "NEXT", false, onNext)
     }
 }
 
@@ -404,11 +324,7 @@ private fun MediaButton(icon: String, label: String, primary: Boolean, onClick: 
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun YouTubeEmbed(
-    videoId: String,
-    autoplay: Boolean,
-    modifier: Modifier = Modifier
-) {
+fun YouTubeEmbed(videoId: String, autoplay: Boolean, modifier: Modifier = Modifier) {
     AndroidView(
         modifier = modifier,
         factory = { context ->
@@ -416,45 +332,30 @@ fun YouTubeEmbed(
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
                 settings.mediaPlaybackRequiresUserGesture = !autoplay
-                settings.allowContentAccess = true
-                settings.allowFileAccess = false
                 settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
                 settings.loadsImagesAutomatically = true
                 webChromeClient = WebChromeClient()
                 webViewClient = WebViewClient()
                 setBackgroundColor(android.graphics.Color.BLACK)
-                setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
+
+                // Let Chromium choose the compositor. Forcing a hardware layer caused
+                // audio-only playback on some Samsung/Android 16 WebView combinations.
+                setLayerType(View.LAYER_TYPE_NONE, null)
+                overScrollMode = View.OVER_SCROLL_NEVER
+                isFocusable = true
+                isFocusableInTouchMode = true
 
                 val auto = if (autoplay) 1 else 0
-                val html = """
-                    <!doctype html>
-                    <html>
-                    <head>
-                      <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-                      <style>
-                        html,body { margin:0; padding:0; width:100%; height:100%; background:#000; overflow:hidden; }
-                        iframe { display:block; border:0; width:100%; height:100%; }
-                      </style>
-                    </head>
-                    <body>
-                      <iframe
-                        src="https://www.youtube.com/embed/$videoId?autoplay=$auto&playsinline=1&controls=1&rel=0&fs=0"
-                        title="Signal Lost player"
-                        allow="autoplay; encrypted-media; picture-in-picture"
-                      ></iframe>
-                    </body>
-                    </html>
-                """.trimIndent()
-
-                // The non-YouTube base URL gives the embed a real Referer identity.
-                // YouTube now requires embedded API clients to identify themselves.
-                loadDataWithBaseURL(
-                    "https://com.signallost.tv/",
-                    html,
-                    "text/html",
-                    "UTF-8",
-                    null
+                val url = "https://www.youtube.com/embed/$videoId?autoplay=$auto&playsinline=1&controls=1&rel=0&fs=0"
+                val headers = mapOf(
+                    "Referer" to "https://com.signallost.tv/",
+                    "Origin" to "https://com.signallost.tv"
                 )
+
+                // Load the YouTube embed directly instead of placing a video iframe
+                // inside another WebView document. This keeps the video surface in the
+                // WebView's primary compositor and avoids the black-video/audio-only bug.
+                loadUrl(url, headers)
             }
         }
     )
