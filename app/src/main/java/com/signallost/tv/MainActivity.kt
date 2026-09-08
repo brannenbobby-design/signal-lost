@@ -130,7 +130,7 @@ fun YouTubeEmbed(
             WebView(context).apply {
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
-                mediaPlaybackRequiresUserGesture = false
+                settings.mediaPlaybackRequiresUserGesture = false
                 webChromeClient = WebChromeClient()
                 webViewClient = WebViewClient()
                 addJavascriptInterface(object {
