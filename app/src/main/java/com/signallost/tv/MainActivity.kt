@@ -19,6 +19,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -43,23 +45,28 @@ class MainActivity : ComponentActivity() {
 data class Channel(
     val number: Int,
     val name: String,
-    val subtitle: String,
+    val shortName: String,
     val videos: List<String>
 )
 
 private val channels = listOf(
-    Channel(1, "90s ROCK", "Big guitars. Bigger hooks.", listOf("fJ9rUzIMcZQ", "1w7OgIMMRc4", "hTWKbfoikeg")),
-    Channel(2, "ALT / GRUNGE", "Flannel required.", listOf("hTWKbfoikeg", "3mbBbFH9fAg", "PbgKEjNBHqM")),
-    Channel(3, "90s COUNTRY", "Boots, bars and backroads.", listOf("r7qovpFAGrQ")),
-    Channel(4, "HIP-HOP / R&B", "Golden-era rotation.", listOf("_JZom_gVfuw")),
-    Channel(5, "POP", "TRL before TRL.", listOf("C-u5WLJ9Yk4")),
-    Channel(6, "METAL", "Turn it up.", listOf("CD-E-LDc384")),
-    Channel(7, "ONE-HIT WONDERS", "All killer, no filler.", listOf("DL7-CKirWZE"))
+    Channel(1, "90s ROCK", "90s ROCK", listOf("fJ9rUzIMcZQ", "1w7OgIMMRc4", "hTWKbfoikeg")),
+    Channel(2, "ALT / GRUNGE", "ALT / GRUNGE", listOf("hTWKbfoikeg", "3mbBbFH9fAg", "PbgKEjNBHqM")),
+    Channel(3, "90s COUNTRY", "COUNTRY", listOf("r7qovpFAGrQ")),
+    Channel(4, "HIP-HOP / R&B", "HIP-HOP / R&B", listOf("_JZom_gVfuw")),
+    Channel(5, "90s POP", "POP", listOf("C-u5WLJ9Yk4")),
+    Channel(6, "90s METAL", "METAL", listOf("CD-E-LDc384")),
+    Channel(7, "ONE-HIT WONDERS", "ONE-HIT WONDERS", listOf("DL7-CKirWZE")),
+    Channel(8, "90s PARTY MIX", "PARTY MIX", listOf("ZbZSe6N_BXs"))
 )
 
-private val SignalBlue = Color(0xFF168CFF)
-private val Panel = Color(0xFF0A0A0A)
-private val Border = Color(0xFF2C2C2C)
+private val NeonBlue = Color(0xFF16A5FF)
+private val NeonPink = Color(0xFFFF2B9F)
+private val TvBlack = Color(0xFF080808)
+private val TvEdge = Color(0xFF242424)
+private val TapeBlack = Color(0xFF111111)
+private val LabelCream = Color(0xFFE8DDC9)
+private val DeskBrown = Color(0xFF3C2117)
 
 @Composable
 fun SignalLostApp() {
@@ -69,8 +76,8 @@ fun SignalLostApp() {
     val channel = channels[channelIndex]
     val videoId = channel.videos[videoIndex % channel.videos.size]
 
-    fun changeChannel(newIndex: Int) {
-        channelIndex = (newIndex + channels.size) % channels.size
+    fun selectChannel(index: Int) {
+        channelIndex = index
         videoIndex = 0
     }
 
@@ -92,169 +99,306 @@ fun SignalLostApp() {
                 .fillMaxSize()
                 .safeDrawingPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFF080A18),
+                            Color(0xFF161026),
+                            Color(0xFF2B1621),
+                            Color(0xFF130C0B)
+                        )
+                    )
+                )
+                .padding(bottom = 16.dp)
         ) {
+            SignalHeader()
+            BedroomScene(
+                selectedChannel = channelIndex,
+                videoId = videoId,
+                onSelectChannel = { selectChannel(it) },
+                onEnded = { nextVideo() },
+                onWebViewReady = { webView = it }
+            )
+            TransportControls(
+                onPrevious = { previousVideo() },
+                onPlay = { play() },
+                onNext = { nextVideo() }
+            )
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "GOOD MUSIC FINDS A WAY.",
+                modifier = Modifier.fillMaxWidth(),
+                color = NeonBlue,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 11.sp,
+                letterSpacing = 2.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun SignalHeader() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 18.dp, vertical = 12.dp)
+    ) {
+        Column {
+            Text(
+                "SIGNAL LOST",
+                color = NeonBlue,
+                fontWeight = FontWeight.Black,
+                fontSize = 30.sp,
+                letterSpacing = 1.sp
+            )
+            Box(
+                modifier = Modifier
+                    .padding(top = 1.dp)
+                    .width(170.dp)
+                    .height(3.dp)
+                    .background(NeonPink)
+            )
+            Text(
+                "MUSIC NEVER DISAPPEARS",
+                modifier = Modifier.padding(top = 5.dp),
+                color = Color.White,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 10.sp,
+                letterSpacing = 1.5.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun BedroomScene(
+    selectedChannel: Int,
+    videoId: String,
+    onSelectChannel: (Int) -> Unit,
+    onEnded: () -> Unit,
+    onWebViewReady: (WebView) -> Unit
+) {
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(
+                Brush.linearGradient(
+                    listOf(
+                        Color(0xFF1A1130),
+                        Color(0xFF391723),
+                        Color(0xFF11172B)
+                    )
+                )
+            )
+            .border(1.dp, Color(0xFF4B345A), RoundedCornerShape(18.dp))
+            .padding(10.dp)
+    ) {
+        val tapeWidth = maxWidth * 0.34f
+        val tvWidth = maxWidth * 0.63f
+
+        Column {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Bottom
             ) {
-                Text("◉", color = SignalBlue, fontSize = 34.sp)
-                Spacer(Modifier.width(10.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        "SIGNAL LOST",
-                        color = Color.White,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 28.sp,
-                        letterSpacing = 1.sp
-                    )
-                    Text(
-                        "MUSIC NEVER DISAPPEARS",
-                        color = Color.LightGray,
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 11.sp,
-                        letterSpacing = 2.sp
-                    )
+                Column(
+                    modifier = Modifier.width(tapeWidth),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    channels.forEachIndexed { index, item ->
+                        VhsTape(
+                            channel = item,
+                            selected = index == selectedChannel,
+                            onClick = { onSelectChannel(index) }
+                        )
+                    }
                 }
-            }
 
-            Spacer(Modifier.height(18.dp))
-            HorizontalDivider(color = Border)
-            Spacer(Modifier.height(18.dp))
-
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    "NOW PLAYING",
-                    color = SignalBlue,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 13.sp
-                )
-                Text(
-                    "CH ${channel.number.toString().padStart(2, '0')} • ${channel.name}",
-                    color = Color.White,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp
-                )
-                Text(
-                    channel.subtitle,
-                    color = Color.Gray,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 13.sp
+                CrtTelevision(
+                    modifier = Modifier.width(tvWidth),
+                    videoId = videoId,
+                    channel = channels[selectedChannel],
+                    onEnded = onEnded,
+                    onWebViewReady = onWebViewReady
                 )
             }
-
-            Spacer(Modifier.height(14.dp))
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(16f / 9f)
-                    .background(Panel)
-                    .border(1.dp, Border, RoundedCornerShape(4.dp))
-            ) {
-                YouTubeEmbed(
-                    videoId = videoId,
-                    onEnded = { nextVideo() },
-                    onWebViewReady = { webView = it },
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-
-            Spacer(Modifier.height(18.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ControlButton("◀|", "PREV", false) { previousVideo() }
-                ControlButton("▶", "PLAY", true) { play() }
-                ControlButton("|▶", "NEXT", false) { nextVideo() }
-            }
-
-            Spacer(Modifier.height(22.dp))
-
-            channels.chunked(2).forEach { rowChannels ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    rowChannels.forEachIndexed { _, item ->
-                        ChannelTile(
-                            channel = item,
-                            selected = item.number == channel.number,
-                            modifier = Modifier.weight(1f)
-                        ) { changeChannel(item.number - 1) }
-                    }
-                    if (rowChannels.size == 1) Spacer(Modifier.weight(1f))
-                }
-                Spacer(Modifier.height(10.dp))
-            }
-
-            Spacer(Modifier.height(10.dp))
-            HorizontalDivider(color = Border)
-            Spacer(Modifier.height(14.dp))
-            Text(
-                "GOOD MUSIC FINDS A WAY.",
-                color = Color.LightGray,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 12.sp,
-                letterSpacing = 2.sp,
-                textAlign = TextAlign.Center
+                    .height(22.dp)
+                    .padding(top = 8.dp)
+                    .background(DeskBrown, RoundedCornerShape(4.dp))
             )
-            Spacer(Modifier.height(12.dp))
         }
     }
 }
 
 @Composable
-private fun ControlButton(label: String, caption: String, primary: Boolean, onClick: () -> Unit) {
+private fun VhsTape(channel: Channel, selected: Boolean, onClick: () -> Unit) {
+    val outline = if (selected) NeonBlue else Color(0xFF383838)
+    val glow = if (selected) Color(0xFF102B45) else TapeBlack
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(42.dp)
+            .background(glow, RoundedCornerShape(5.dp))
+            .border(if (selected) 2.dp else 1.dp, outline, RoundedCornerShape(5.dp))
+            .clickable { onClick() }
+            .padding(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .width(7.dp)
+                .fillMaxHeight()
+                .background(if (selected) NeonBlue else Color(0xFF4B2424), RoundedCornerShape(2.dp))
+        )
+        Box(
+            modifier = Modifier
+                .padding(start = 4.dp)
+                .weight(1f)
+                .fillMaxHeight()
+                .background(LabelCream, RoundedCornerShape(2.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                channel.shortName,
+                color = Color(0xFF171717),
+                fontWeight = FontWeight.Bold,
+                fontSize = 9.sp,
+                textAlign = TextAlign.Center,
+                maxLines = 2
+            )
+        }
+        Text(
+            "VHS",
+            modifier = Modifier.padding(start = 3.dp),
+            color = Color.LightGray,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 7.sp
+        )
+    }
+}
+
+@Composable
+private fun CrtTelevision(
+    modifier: Modifier,
+    videoId: String,
+    channel: Channel,
+    onEnded: () -> Unit,
+    onWebViewReady: (WebView) -> Unit
+) {
+    Column(
+        modifier = modifier
+            .background(TvBlack, RoundedCornerShape(14.dp))
+            .border(4.dp, TvEdge, RoundedCornerShape(14.dp))
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(4f / 3f)
+                .clip(RoundedCornerShape(18.dp))
+                .background(Color.Black)
+                .border(2.dp, Color(0xFF303030), RoundedCornerShape(18.dp))
+        ) {
+            YouTubeEmbed(
+                videoId = videoId,
+                onEnded = onEnded,
+                onWebViewReady = onWebViewReady,
+                modifier = Modifier.fillMaxSize()
+            )
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .background(Color.Black.copy(alpha = 0.70f))
+                    .padding(horizontal = 7.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    "CH ${channel.number.toString().padStart(2, '0')} • ${channel.shortName}",
+                    color = Color(0xFF42E8FF),
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "SIGNAL LOST VIDEO NETWORK",
+                    color = Color.White,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 6.sp
+                )
+            }
+        }
+
+        Spacer(Modifier.height(7.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("●", color = Color(0xFFFF5A4F), fontSize = 9.sp)
+            Text("SIGNAL LOST", color = Color.Gray, fontFamily = FontFamily.Monospace, fontSize = 7.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                repeat(4) {
+                    Box(
+                        Modifier
+                            .width(13.dp)
+                            .height(5.dp)
+                            .background(Color(0xFF292929), RoundedCornerShape(2.dp))
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransportControls(onPrevious: () -> Unit, onPlay: () -> Unit, onNext: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 14.dp, start = 18.dp, end = 18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            MediaButton("|◀", "PREV", false, onPrevious)
+            Spacer(Modifier.width(26.dp))
+            MediaButton("▶", "PLAY", true, onPlay)
+            Spacer(Modifier.width(26.dp))
+            MediaButton("▶|", "NEXT", false, onNext)
+        }
+    }
+}
+
+@Composable
+private fun MediaButton(icon: String, label: String, primary: Boolean, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
-                .size(if (primary) 68.dp else 58.dp)
-                .background(if (primary) SignalBlue else Panel, if (primary) CircleShape else RoundedCornerShape(18.dp))
-                .border(1.dp, if (primary) SignalBlue else Border, if (primary) CircleShape else RoundedCornerShape(18.dp))
+                .size(if (primary) 66.dp else 52.dp)
+                .background(if (primary) NeonBlue else Color(0xFF171717), if (primary) CircleShape else RoundedCornerShape(14.dp))
+                .border(1.dp, if (primary) NeonBlue else Color(0xFF434343), if (primary) CircleShape else RoundedCornerShape(14.dp))
                 .clickable { onClick() },
             contentAlignment = Alignment.Center
         ) {
-            Text(label, color = Color.White, fontSize = if (primary) 28.sp else 20.sp)
+            Text(icon, color = Color.White, fontSize = if (primary) 25.sp else 17.sp)
         }
-        Spacer(Modifier.height(6.dp))
-        Text(caption, color = Color.LightGray, fontFamily = FontFamily.Monospace, fontSize = 11.sp)
-    }
-}
-
-@Composable
-private fun ChannelTile(channel: Channel, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Box(
-        modifier = modifier
-            .height(76.dp)
-            .background(if (selected) Color(0xFF102A43) else Panel, RoundedCornerShape(12.dp))
-            .border(2.dp, if (selected) SignalBlue else Border, RoundedCornerShape(12.dp))
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                channel.name,
-                color = Color.White,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.Bold,
-                fontSize = 13.sp,
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "CH ${channel.number.toString().padStart(2, '0')}",
-                color = if (selected) SignalBlue else Color.Gray,
-                fontFamily = FontFamily.Monospace,
-                fontSize = 11.sp
-            )
-        }
+        Spacer(Modifier.height(5.dp))
+        Text(label, color = Color.White, fontFamily = FontFamily.Monospace, fontSize = 10.sp)
     }
 }
 
@@ -275,6 +419,8 @@ fun YouTubeEmbed(
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
                 settings.mediaPlaybackRequiresUserGesture = true
+                settings.allowContentAccess = true
+                settings.allowFileAccess = true
                 webChromeClient = WebChromeClient()
                 webViewClient = WebViewClient()
                 setBackgroundColor(android.graphics.Color.BLACK)
@@ -295,6 +441,7 @@ fun YouTubeEmbed(
                       <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
                       <style>
                         html,body,#player { margin:0; width:100%; height:100%; background:#000; overflow:hidden; }
+                        iframe { width:100% !important; height:100% !important; }
                       </style>
                     </head>
                     <body>
@@ -310,7 +457,7 @@ fun YouTubeEmbed(
                               controls: 1,
                               rel: 0,
                               playsinline: 1,
-                              modestbranding: 1,
+                              enablejsapi: 1,
                               origin: 'https://www.youtube.com'
                             },
                             events: {
