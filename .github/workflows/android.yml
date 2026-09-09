@@ -23,26 +23,14 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
-      - name: Decode and validate generated room artwork
+      - name: Validate room artwork
         run: |
-          mkdir -p app/src/main/res/drawable-nodpi
           python3 - <<'PY'
           from pathlib import Path
-          import base64
-
-          candidates = [
-              Path('assets/signal_lost_room.jpg.b64'),
-              Path('assets/signal_lost_room.jpg.b64.part2'),
-              Path('assets/signal_lost_room.part2.b64'),
-          ]
-          parts = [p.read_text().strip() for p in candidates if p.exists()]
-          source = ''.join(parts)
-          source += '=' * (-len(source) % 4)
-          image = base64.b64decode(source, validate=False)
+          p = Path('app/src/main/res/drawable-nodpi/signal_lost_room.jpg')
+          image = p.read_bytes()
           if not image.startswith(b'\xff\xd8') or not image.endswith(b'\xff\xd9'):
               raise SystemExit(f'Artwork JPEG is incomplete: {len(image)} bytes')
-          out = Path('app/src/main/res/drawable-nodpi/signal_lost_room.jpg')
-          out.write_bytes(image)
           print(f'Validated complete JPEG: {len(image)} bytes')
           PY
           file app/src/main/res/drawable-nodpi/signal_lost_room.jpg
