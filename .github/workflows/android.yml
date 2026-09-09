@@ -23,6 +23,11 @@ jobs:
         with:
           gradle-version: '8.10.2'
 
+      - name: Decode generated room artwork
+        run: |
+          mkdir -p app/src/main/res/drawable-nodpi
+          base64 --decode assets/signal_lost_room.jpg.b64 > app/src/main/res/drawable-nodpi/signal_lost_room.jpg
+
       - name: Build debug APK
         run: gradle :app:assembleDebug
 
