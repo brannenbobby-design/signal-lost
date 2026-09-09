@@ -30,7 +30,11 @@ jobs:
           from pathlib import Path
           import base64
 
-          source = Path('assets/signal_lost_room.jpg.b64').read_text().strip()
+          parts = [
+              Path('assets/signal_lost_room.jpg.b64').read_text().strip(),
+              Path('assets/signal_lost_room.jpg.b64.part2').read_text().strip(),
+          ]
+          source = ''.join(parts)
           source += '=' * (-len(source) % 4)
           image = base64.b64decode(source, validate=False)
           if not image.startswith(b'\xff\xd8'):
