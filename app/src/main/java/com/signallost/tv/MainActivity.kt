@@ -64,7 +64,6 @@ fun SignalLostApp() {
     var channelIndex by remember { mutableIntStateOf(0) }
     var videoIndex by remember { mutableIntStateOf(0) }
     var player by remember { mutableStateOf<YouTubePlayer?>(null) }
-    var playing by remember { mutableStateOf(false) }
 
     val channel = channels[channelIndex]
     val videoId = channel.videos[videoIndex % channel.videos.size]
@@ -72,26 +71,27 @@ fun SignalLostApp() {
     fun chooseChannel(index: Int) {
         channelIndex = index
         videoIndex = 0
-        playing = true
     }
 
     fun next() {
         videoIndex = (videoIndex + 1) % channel.videos.size
-        playing = true
     }
 
     fun previous() {
         videoIndex = (videoIndex - 1 + channel.videos.size) % channel.videos.size
-        playing = true
     }
 
-    BoxWithConstraints(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+    BoxWithConstraints(
+        Modifier.fillMaxSize().background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
         val sourceW = 640f
         val sourceH = 594f
         val screenRatio = maxWidth.value / maxHeight.value
         val artRatio = sourceW / sourceH
         val artWidth: Dp
         val artHeight: Dp
+
         if (screenRatio > artRatio) {
             artHeight = maxHeight
             artWidth = maxHeight * artRatio
@@ -108,18 +108,15 @@ fun SignalLostApp() {
                 contentScale = ContentScale.FillBounds
             )
 
-            // Live player placed directly over the CRT glass in the artwork.
             OverlayRect(artWidth, artHeight, .402f, .272f, .377f, .272f) {
                 SignalLostYouTubePlayer(
                     videoId = videoId,
-                    autoplay = playing,
                     onPlayerReady = { player = it },
                     onVideoEnded = { next() },
                     modifier = Modifier.fillMaxSize()
                 )
             }
 
-            // VHS tape hit areas. The blue border moves with the selected channel.
             channels.indices.forEach { index ->
                 val y = .232f + index * .0484f
                 OverlayRect(artWidth, artHeight, .126f, y, .215f, .044f) {
@@ -135,12 +132,8 @@ fun SignalLostApp() {
                 }
             }
 
-            // Invisible controls aligned to the buttons already drawn in the artwork.
             TapRect(artWidth, artHeight, .307f, .776f, .105f, .078f) { previous() }
-            TapRect(artWidth, artHeight, .447f, .766f, .111f, .095f) {
-                playing = true
-                player?.play()
-            }
+            TapRect(artWidth, artHeight, .447f, .766f, .111f, .095f) { player?.play() }
             TapRect(artWidth, artHeight, .591f, .776f, .105f, .078f) { next() }
         }
     }
@@ -164,7 +157,15 @@ private fun OverlayRect(
 }
 
 @Composable
-private fun TapRect(parentW: Dp, parentH: Dp, x: Float, y: Float, w: Float, h: Float, onClick: () -> Unit) {
+private fun TapRect(
+    parentW: Dp,
+    parentH: Dp,
+    x: Float,
+    y: Float,
+    w: Float,
+    h: Float,
+    onClick: () -> Unit
+) {
     OverlayRect(parentW, parentH, x, y, w, h) {
         Box(Modifier.fillMaxSize().clickable { onClick() })
     }
@@ -173,7 +174,6 @@ private fun TapRect(parentW: Dp, parentH: Dp, x: Float, y: Float, w: Float, h: F
 @Composable
 private fun SignalLostYouTubePlayer(
     videoId: String,
-    autoplay: Boolean,
     onPlayerReady: (YouTubePlayer) -> Unit,
     onVideoEnded: () -> Unit,
     modifier: Modifier = Modifier
@@ -189,31 +189,39 @@ private fun SignalLostYouTubePlayer(
             YouTubePlayerView(ctx).apply {
                 enableAutomaticInitialization = false
                 activity?.lifecycle?.addObserver(this)
+
                 val options = IFramePlayerOptions.Builder(ctx)
-                    .controls(0)
+                    .controls(1)
                     .fullscreen(0)
                     .autoplay(0)
                     .ivLoadPolicy(3)
                     .build()
-                initialize(object : AbstractYouTubePlayerListener() {
+
+                val listener = object : AbstractYouTubePlayerListener() {
                     override fun onReady(player: YouTubePlayer) {
                         youTubePlayer = player
                         onPlayerReady(player)
-                        if (autoplay) player.loadVideo(videoId, 0f) else player.cueVideo(videoId, 0f)
+                        player.cueVideo(videoId, 0f)
                     }
 
-                    override fun onStateChange(youTubePlayer: YouTubePlayer, state: PlayerConstants.PlayerState) {
-                        if (state == PlayerConstants.PlayerState.ENDED) onVideoEnded()
+                    override fun onStateChange(
+                        youTubePlayer: YouTubePlayer,
+                        state: PlayerConstants.PlayerState
+                    ) {
+                        if (state == PlayerConstants.PlayerState.ENDED) {
+                            onVideoEnded()
+                        }
                     }
-                }, options)
+                }
+
+                initialize(listener, options)
                 playerView = this
             }
         }
     )
 
-    LaunchedEffect(youTubePlayer, videoId, autoplay) {
-        val p = youTubePlayer ?: return@LaunchedEffect
-        if (autoplay) p.loadVideo(videoId, 0f) else p.cueVideo(videoId, 0f)
+    LaunchedEffect(youTubePlayer, videoId) {
+        youTubePlayer?.cueVideo(videoId, 0f)
     }
 
     DisposableEffect(Unit) {
