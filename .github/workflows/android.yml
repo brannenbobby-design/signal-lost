@@ -26,7 +26,19 @@ jobs:
       - name: Decode generated room artwork
         run: |
           mkdir -p app/src/main/res/drawable-nodpi
-          base64 --decode assets/signal_lost_room.jpg.b64 > app/src/main/res/drawable-nodpi/signal_lost_room.jpg
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64
+
+          source = Path('assets/signal_lost_room.jpg.b64').read_text().strip()
+          source += '=' * (-len(source) % 4)
+          image = base64.b64decode(source, validate=False)
+          if not image.startswith(b'\xff\xd8'):
+              raise SystemExit('Decoded artwork is not a JPEG')
+          Path('app/src/main/res/drawable-nodpi/signal_lost_room.jpg').write_bytes(image)
+          print(f'Decoded artwork: {len(image)} bytes')
+          PY
+          file app/src/main/res/drawable-nodpi/signal_lost_room.jpg
 
       - name: Build debug APK
         run: gradle :app:assembleDebug
